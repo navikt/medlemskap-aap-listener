@@ -1,11 +1,12 @@
 package no.nav.medlemskap.aap.listener.clients
 
 
-import no.nav.medlemskap.sykepenger.lytter.clients.azuread.AzureAdClient
-import no.nav.medlemskap.sykepenger.lytter.clients.medloppslag.MedlOppslagClient
-import no.nav.medlemskap.sykepenger.lytter.config.Configuration
-import no.nav.medlemskap.sykepenger.lytter.config.retryRegistry
-import no.nav.medlemskap.sykepenger.lytter.http.cioHttpClient
+import no.nav.medlemskap.aap.listener.clients.azuread.AzureAdClient
+import no.nav.medlemskap.aap.listener.clients.medloppslag.MedlOppslagClient
+import no.nav.medlemskap.aap.listener.config.Configuration
+import no.nav.medlemskap.aap.listener.config.retryRegistry
+import no.nav.medlemskap.aap.listener.http.cioHttpClient
+
 
 class RestClients(
     private val azureAdClient: AzureAdClient,

@@ -6,13 +6,14 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.time.delay
 import mu.KotlinLogging
 import no.nav.medlemskap.aap.listener.config.Configuration
-import no.nav.medlemskap.aap.listener.config.KafkaConfig
 import no.nav.medlemskap.aap.listener.config.Environment
+import no.nav.medlemskap.aap.listener.config.KafkaConfig
 import no.nav.medlemskap.aap.listener.domain.SoknadRecord
 import no.nav.medlemskap.aap.listener.jakson.JaksonParser
 import no.nav.medlemskap.aap.listener.service.LovMeService
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import java.time.Duration
+
 
 class Consumer(
     environment: Environment,
@@ -20,7 +21,7 @@ class Consumer(
     private val service: LovMeService = LovMeService(Configuration()),
     private val consumer: KafkaConsumer<String, String> = config.createConsumer(),
 
-)
+    )
 {
     private val secureLogger = KotlinLogging.logger("tjenestekall")
     private val logger = KotlinLogging.logger { }

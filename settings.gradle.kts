@@ -1,4 +1,4 @@
-rootProject.name = "medlemskap-sykepenger-lytter"
+rootProject.name = "medlemskap-aap-lytter"
 
 pluginManagement {
     repositories {

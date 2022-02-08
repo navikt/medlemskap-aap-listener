@@ -5,7 +5,7 @@ val kotlinLoggerVersion = "1.8.3"
 val resilience4jVersion = "1.5.0"
 val logstashVersion = "6.4"
 val logbackVersion = "1.2.3"
-val mainClass = "no.nav.medlemskap.sykepenger.lytter.ApplicationKt"
+val mainClass = "no.nav.medlemskap.aap.lytter.ApplicationKt"
 
 plugins {
     kotlin("jvm") version "1.5.10"
@@ -27,6 +27,7 @@ repositories {
 
 dependencies {
     implementation(kotlin("stdlib"))
+    implementation("com.github.navikt:rapids-and-rivers:1.5e3ca6a")
     implementation("io.ktor:ktor-client-apache:$ktorVersion")
     implementation("io.github.resilience4j:resilience4j-retry:$resilience4jVersion")
     implementation("io.github.resilience4j:resilience4j-kotlin:$resilience4jVersion")
@@ -82,5 +83,5 @@ tasks {
 }
 
 application {
-    mainClass.set("no.nav.medlemskap.sykepenger.lytter.ApplicationKt")
+    mainClass.set("no.nav.medlemskap.aap.lytter.ApplicationKt")
 }

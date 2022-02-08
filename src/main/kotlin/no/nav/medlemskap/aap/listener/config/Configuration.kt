@@ -7,7 +7,6 @@ import java.io.File
 import java.io.FileNotFoundException
 
 private val logger = KotlinLogging.logger { }
-
 private val defaultProperties = ConfigurationMap(
     mapOf(
         "AZURE_OPENID_CONFIG_TOKEN_ENDPOINT" to "https://login.microsoftonline.com/966ac572-f5b7-4bbe-aa88-c76419c0f851/oauth2/v2.0/token",
@@ -42,6 +41,7 @@ private val config = ConfigurationProperties.systemProperties() overriding
 
 private fun String.configProperty(): String = config[Key(this, stringType)]
 
+private val securityStrategy: KafkaConfig.SecurityStrategy = PlainStrategy(System.getenv())
 private fun String.readFile() =
     try {
         logger.info { "Leser fra azure-fil $this" }
@@ -92,12 +92,21 @@ data class Configuration(
         val bootstrapServers: String = "KAFKA_BROKERS".configProperty(),
         val securityProtocol: String = "SSL",
         val trustStorePath: String = "KAFKA_TRUSTSTORE_PATH".configProperty(),
-        val groupID: String = "medlemskap-sykepenger-listener",
+        val groupID: String = "medlemskap-aap-listener",
         val trustStorePassword: String = "KAFKA_CREDSTORE_PASSWORD".configProperty(),
         val keystoreType: String = "PKCS12",
         val keystoreLocation: String = "KAFKA_KEYSTORE_PATH".configProperty(),
         val keystorePassword: String = "KAFKA_CREDSTORE_PASSWORD".configProperty(),
         val enabled: String = "KAFKA_ENABLED".configProperty(),
-        val topic : String =  "flex.sykepengesoknad-lovme-filter"
+        val topic : String =  "medlemskap.test-medlemskap-oppslag",
+        val rapidApplication: Map<String, String> = mapOf(
+            "RAPID_APP_NAME" to "medlemskap-aap-listener",
+            "KAFKA_BOOTSTRAP_SERVERS" to bootstrapServers,
+            "KAFKA_RESET_POLICY" to "earliest",
+            "KAFKA_RAPID_TOPIC" to topic,
+            "KAFKA_CONSUMER_GROUP_ID" to groupID,
+            "NAV_TRUSTSTORE_PATH" to trustStorePath,
+            "NAV_TRUSTSTORE_PASSWORD" to trustStorePassword
+        )
     )
 }

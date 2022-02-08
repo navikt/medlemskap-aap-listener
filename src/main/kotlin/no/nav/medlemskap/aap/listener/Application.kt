@@ -1,28 +1,18 @@
 package no.nav.medlemskap.aap.listener
 
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.flow.launchIn
-import no.nav.medlemskap.aap.listener.config.Environment
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
-
+import no.nav.helse.rapids_rivers.RapidApplication
+import no.nav.medlemskap.aap.listener.config.Configuration
+import no.nav.medlemskap.aap.listener.service.LovMeService
 
 fun main() {
-    Application().start()
-}
+    val config = Configuration()
 
-class Application(private val env: Environment = System.getenv(), private val consumer: Consumer = Consumer(env)) {
-    companion object {
-        val log: Logger = LoggerFactory.getLogger(Application::class.java)
-    }
+    //val azureAdClient = AzureAdClient(config.azureAd)
+    //val oidcTokenProvider = { azureAdClient.token(config.medlemskapOppslag.clientId).access_token }
 
-    fun start() {
-        log.info("Start application")
+    //val oppslagClient = MedlemskapOppslagClient(config.medlemskapOppslag.url, oidcTokenProvider)
 
-        @OptIn(DelicateCoroutinesApi::class)
-        val consumeJob = consumer.flow().launchIn(GlobalScope)
-
-        naisLiveness(consumeJob).start(wait = true)
-    }
+    RapidApplication.create(config.kafkaConfig.rapidApplication).apply {
+        LovmeAAPSolver(this, lovMeService = LovMeService(config))
+    }.start()
 }

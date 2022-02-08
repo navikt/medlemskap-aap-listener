@@ -1,7 +1,7 @@
 apiVersion: kafka.nais.io/v1
 kind: Topic
 metadata:
-  name: test-lovme-aap-listener
+  name: test-medlemskap-oppslag
   namespace: medlemskap
   labels:
     team: medlemskap
