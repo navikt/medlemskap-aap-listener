@@ -1,6 +1,9 @@
 package no.nav.medlemskap.aap.river
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import junit.framework.Assert.assertNotNull
+import no.nav.aap.medlem.model.MedlemRequest
 import no.nav.aap.medlem.model.Svar
 import no.nav.helse.rapids_rivers.asLocalDate
 import no.nav.helse.rapids_rivers.testsupport.TestRapid
@@ -19,6 +22,12 @@ class MedlemskapAAPSolverTest {
     @Test
     fun `at vi får medlemskapsvurdering tilbake`() {
        val uuid =  UUID.randomUUID().toString();
+
+        val request:MedlemRequest = MedlemRequest(ytelse = "AAP")
+        val json = ObjectMapper()
+            .registerKotlinModule()
+            .findAndRegisterModules()
+            .writeValueAsString(request)
         //language=JSON
         rapid.sendTestMessage(
             """{
@@ -27,7 +36,7 @@ class MedlemskapAAPSolverTest {
           ],
           "@id": "$uuid",
           "folkeregisteridentifikator": "12345678900",
-          "medlemRequest" : {}
+          "medlemRequest" : $json
         }
             """.trimIndent()
         )
