@@ -19,6 +19,7 @@ open class KafkaConfig(
         ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
         CommonClientConfigs.CLIENT_ID_CONFIG to Configuration.KafkaConfig().clientId,
         ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
+
         ConsumerConfig.GROUP_ID_CONFIG to Configuration.KafkaConfig().groupID,
         ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest",
         ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to "false",

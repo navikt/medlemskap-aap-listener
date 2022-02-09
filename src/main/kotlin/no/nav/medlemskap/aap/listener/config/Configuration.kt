@@ -105,8 +105,9 @@ data class Configuration(
             "KAFKA_RESET_POLICY" to "earliest",
             "KAFKA_RAPID_TOPIC" to topic,
             "KAFKA_CONSUMER_GROUP_ID" to groupID,
-            "NAV_TRUSTSTORE_PATH" to trustStorePath,
-            "NAV_TRUSTSTORE_PASSWORD" to trustStorePassword
+            "KAFKA_KEYSTORE_PATH" to trustStorePath,
+            "KAFKA_KEYSTORE_PASSWORD" to trustStorePassword,
+
         )
     )
 }
