@@ -14,9 +14,9 @@ class MedlOppslagClient(
     private val azureAdClient: AzureAdClient,
     private val httpClient: HttpClient,
     private val retry: Retry? = null
-) {
+):LovmeAPI {
 
-    suspend fun vurderMedlemskap(medlOppslagRequest: MedlOppslagRequest, callId: String): String {
+    override suspend fun vurderMedlemskap(medlOppslagRequest: MedlOppslagRequest, callId: String): String {
         val token = azureAdClient.hentTokenScopetMotMedlemskapOppslag()
         return runWithRetryAndMetrics("MEDL-OPPSLAG", "vurdermedlemskap", retry) {
             httpClient.post {
@@ -30,3 +30,4 @@ class MedlOppslagClient(
         }
     }
 }
+

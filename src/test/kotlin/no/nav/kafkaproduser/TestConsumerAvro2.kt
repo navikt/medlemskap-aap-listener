@@ -1,40 +1,36 @@
 package no.nav.kafkaproduser
 
-
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClientConfig
+import io.confluent.kafka.serializers.KafkaAvroDeserializer
 import io.confluent.kafka.serializers.KafkaAvroSerializer
-import no.nav.aap.avro.medlem.v1.ErMedlem
 import no.nav.aap.avro.medlem.v1.Medlem
 import no.nav.aap.avro.medlem.v1.Request
-import no.nav.aap.avro.medlem.v1.Response
 import no.nav.medlemskap.aap.listener.config.Configuration
 import no.nav.medlemskap.aap.listener.config.Environment
 import no.nav.medlemskap.aap.listener.config.KafkaConfig
 import org.apache.avro.generic.GenericRecord
 import org.apache.kafka.clients.CommonClientConfigs
+import org.apache.kafka.clients.consumer.Consumer
 import org.apache.kafka.clients.consumer.ConsumerConfig
-import org.apache.kafka.clients.producer.KafkaProducer
-import org.apache.kafka.clients.producer.Producer
-import org.apache.kafka.clients.producer.ProducerConfig
-import org.apache.kafka.clients.producer.ProducerRecord
+import org.apache.kafka.clients.consumer.ConsumerRecords
+import org.apache.kafka.clients.consumer.KafkaConsumer
+import org.apache.kafka.clients.producer.ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG
 import org.apache.kafka.common.config.SaslConfigs
 import org.apache.kafka.common.config.SslConfigs
 import org.apache.kafka.common.security.auth.SecurityProtocol
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.common.serialization.StringSerializer
-import java.io.File
-import java.lang.String.format
+import java.time.Duration
 import java.time.LocalDate
 import java.util.*
-
 import java.util.logging.Level
 import java.util.logging.Logger
 
 fun main(args: Array<String>) {
-    SimpleProducer(KafkaConfig(System.getenv())).produce(1)
+    TestConsumerAvro2(KafkaConfig(System.getenv())).consume(10)
 }
 
-class SimpleProducer(brokers: KafkaConfig) {
+class TestConsumerAvro2(brokers: KafkaConfig) {
     private val env: Environment = System.getenv()
     private val logger = Logger.getLogger("SimpleProducer")
 
@@ -43,16 +39,17 @@ class SimpleProducer(brokers: KafkaConfig) {
     fun inst2Config() = mapOf(
         CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG to Configuration.KafkaConfig().bootstrapServers,
         //ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
-        ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
+        ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
         CommonClientConfigs.CLIENT_ID_CONFIG to "Produser",//Configuration.KafkaConfig().clientId,
         //ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to KafkaAvroDeserializer::class.java,
         //ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
-        ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to KafkaAvroSerializer::class.java,
+        ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to KafkaAvroDeserializer::class.java,
+        ConsumerConfig.GROUP_ID_CONFIG to "testAAPAvroConsumer_new",
         //KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG to true,
         //KafkaAvroDeserializerConfig.SCHEMA_REGISTRY_URL_CONFIG to schemaRegistry,
-        ProducerConfig.CLIENT_ID_CONFIG to Configuration.KafkaConfig().groupID,
+        ConsumerConfig.CLIENT_ID_CONFIG to Configuration.KafkaConfig().groupID,
         //ConsumerConfig.GROUP_ID_CONFIG to Configuration.KafkaConfig().groupID,
-        //ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "latest",
+        ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest",
         CommonClientConfigs.SECURITY_PROTOCOL_CONFIG to SecurityProtocol.SASL_SSL.name,
         SaslConfigs.SASL_MECHANISM to "PLAIN",
         SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG to Configuration.KafkaConfig().keystoreLocation,
@@ -63,37 +60,34 @@ class SimpleProducer(brokers: KafkaConfig) {
         SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG to Configuration.KafkaConfig().keystorePassword,
         SslConfigs.SSL_KEYSTORE_TYPE_CONFIG to Configuration.KafkaConfig().keystoreType,
         "schema.registry.url" to "https://nav-dev-kafka-nav-dev.aivencloud.com:26487",
+        "specific.avro.reader" to "true",
         SchemaRegistryClientConfig.BASIC_AUTH_CREDENTIALS_SOURCE to "USER_INFO" ,
-        SchemaRegistryClientConfig.USER_INFO_CONFIG to format("%s:%s", "medlemskap_oppslag_a0ee9eab_NVs", "qyIiyGxjMCLRtr2K")
+        SchemaRegistryClientConfig.USER_INFO_CONFIG to java.lang.String.format(
+            "%s:%s",
+            "medlemskap_oppslag_a0ee9eab_NVs",
+            "qyIiyGxjMCLRtr2K"
+        )
 
 
 
     )
-    private val producer = createProducer()
-    private fun createProducer(): Producer<String, Medlem> {
+    private val consumer = createConsumer()
+    private fun  createConsumer(): Consumer<String, Medlem> {
 
-        return KafkaProducer<String, Medlem>(inst2Config())
+        return KafkaConsumer<String, Medlem>(inst2Config())
     }
 
-    fun produce(ratePerSecond: Int) {
-        val medlem = Medlem("id","", Request(LocalDate.now(),"AAP",false), null)
-        //val jsonString: String = File("./src/main/resources/sampleRequest.json").readText(Charsets.UTF_8)
-        ratePerSecond
+    fun consume(ratePerSecond: Int) {
+        consumer.subscribe(listOf("medlemskap.test-medlemskap-oppslag-avro"))
         while(true) {
-
-            val futureResult = producer.send(
-                ProducerRecord(
-                    "medlemskap.test-medlemskap-oppslag-avro",
-                    UUID.randomUUID().toString(), medlem
-                )
-            )
-
-            logger.log(Level.INFO, "Sent a record")
-
-            Thread.sleep(1000*ratePerSecond.toLong())
-
-            // wait for the write acknowledgment
-            //futureResult.get()
+            System.out.println("Polling");
+            var records: ConsumerRecords<String, Medlem> = consumer.poll(Duration.ofSeconds(5))
+            logger.info("Received ${records.count()} records")
+            records.iterator().forEach {
+                val medlemAvro:Medlem = it.value()
+                println(medlemAvro)
+            }
         }
-        }
+        //val jsonString: String = File("./src/main/resources/sampleRequest.json").readText(Charsets.UTF_8)
     }
+}

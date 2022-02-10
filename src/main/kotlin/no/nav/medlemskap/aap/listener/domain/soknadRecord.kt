@@ -1,3 +1,5 @@
 package no.nav.medlemskap.aap.listener.domain
 
-data class SoknadRecord(val partition:Int,val offset:Long,val value : String, val key:String?,val topic:String,val sykepengeSoknad:LovmeSoknadDTO)
+import no.nav.aap.avro.medlem.v1.Medlem
+
+data class AapRecord(val partition:Int, val offset:Long, val key:String?, val topic:String, val aapRequest:Medlem)
