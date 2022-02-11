@@ -76,7 +76,7 @@ class SimpleProducer(brokers: KafkaConfig) {
     }
 
     fun produce(ratePerSecond: Int) {
-        val medlem = Medlem("id","", Request(LocalDate.now(),"AAP",false), null)
+        val medlem = Medlem("id",UUID.randomUUID().toString(), Request(LocalDate.now(),"AAP",false), null)
         //val jsonString: String = File("./src/main/resources/sampleRequest.json").readText(Charsets.UTF_8)
         ratePerSecond
         while(true) {

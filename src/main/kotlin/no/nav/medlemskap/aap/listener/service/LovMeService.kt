@@ -7,6 +7,7 @@ import no.nav.aap.avro.medlem.v1.ErMedlem
 import no.nav.aap.avro.medlem.v1.Medlem
 import no.nav.aap.avro.medlem.v1.Request
 import no.nav.aap.avro.medlem.v1.Response
+import no.nav.medlemskap.aap.listener.Kafka.KafkaProduser
 import no.nav.medlemskap.aap.listener.domain.AapRecord
 import no.nav.medlemskap.aap.listener.clients.RestClients
 import no.nav.medlemskap.aap.listener.clients.azuread.AzureAdClient
@@ -16,7 +17,8 @@ import no.nav.medlemskap.aap.listener.jakson.JaksonParser
 
 class LovMeService(
     private val configuration: Configuration,
-    private val medlOppslagClient: LovmeAPI
+    private val medlOppslagClient: LovmeAPI,
+    private val kafkaProduser: KafkaProduser
 )
 {
     companion object {
@@ -37,8 +39,9 @@ class LovMeService(
         if (validerSoknad(aapRecord.aapRequest)) {
             try {
                 var response = vurderAAPMeldemskap(aapRecord.aapRequest)
-                //TODO: Publish response to kafka
-                println("temporarily end of line. Response will be implemented shotly")
+                aapRecord.logSendt()
+                kafkaProduser.publish(configuration.kafkaConfig.topic,aapRecord.aapRequest.id,response)
+                aapRecord.logSvart()
             }
             catch (t:Throwable){
                 aapRecord.logTekiskFeil(t)
@@ -83,6 +86,11 @@ class LovMeService(
     private fun AapRecord.logTekiskFeil(t:Throwable) =
         LovMeService.log.info(
             "Teknisk feil ved kall mot LovMe - aapID: ${aapRequest.id}, melding:"+t.message,
+            kv("callId", aapRequest.id),
+        )
+    private fun AapRecord.logSvart() =
+        LovMeService.log.info(
+            "Respons gitt til AAP - aapID: ${aapRequest.id}, topic: $topic",
             kv("callId", aapRequest.id),
         )
 }

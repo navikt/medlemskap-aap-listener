@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.time.delay
 import mu.KotlinLogging
 import no.nav.aap.avro.medlem.v1.Medlem
+import no.nav.medlemskap.aap.listener.Kafka.AapKafkaProducer
 import no.nav.medlemskap.aap.listener.clients.RestClients
 import no.nav.medlemskap.aap.listener.clients.azuread.AzureAdClient
 import no.nav.medlemskap.aap.listener.clients.medloppslag.LovmeAPI
@@ -21,7 +22,11 @@ import java.util.Objects.isNull
 class AvroConsumer(
     environment: Environment,
     private val config: KafkaConfig = KafkaConfig(environment),
-    private val service: LovMeService = LovMeService(Configuration(), SimulatedLovMeResponseClient()),
+    private val service: LovMeService = LovMeService(
+        Configuration(),
+        SimulatedLovMeResponseClient(),
+        AapKafkaProducer(Configuration())
+    ),
     private val consumer: KafkaConsumer<String, Medlem> = config.createAvroConsumer(),
 )
 {
