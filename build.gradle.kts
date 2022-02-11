@@ -85,5 +85,5 @@ tasks {
 }
 
 application {
-    mainClass.set("no.nav.medlemskap.aap.lytter.ApplicationKt")
+    mainClass.set("no.nav.medlemskap.aap.listener.ApplicationKt")
 }
