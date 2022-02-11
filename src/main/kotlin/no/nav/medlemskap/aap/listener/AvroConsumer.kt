@@ -5,6 +5,10 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.time.delay
 import mu.KotlinLogging
 import no.nav.aap.avro.medlem.v1.Medlem
+import no.nav.medlemskap.aap.listener.clients.RestClients
+import no.nav.medlemskap.aap.listener.clients.azuread.AzureAdClient
+import no.nav.medlemskap.aap.listener.clients.medloppslag.LovmeAPI
+import no.nav.medlemskap.aap.listener.clients.medloppslag.SimulatedLovMeResponseClient
 import no.nav.medlemskap.aap.listener.config.Configuration
 import no.nav.medlemskap.aap.listener.config.Environment
 import no.nav.medlemskap.aap.listener.config.KafkaConfig
@@ -17,14 +21,21 @@ import java.util.Objects.isNull
 class AvroConsumer(
     environment: Environment,
     private val config: KafkaConfig = KafkaConfig(environment),
-    private val service: LovMeService = LovMeService(Configuration()),
+    private val service: LovMeService = LovMeService(Configuration(), SimulatedLovMeResponseClient()),
     private val consumer: KafkaConsumer<String, Medlem> = config.createAvroConsumer(),
 )
 {
+    val azureAdClient = AzureAdClient(Configuration())
+    val restClients = RestClients(
+        azureAdClient = azureAdClient,
+        configuration = Configuration()
+    )
+    val medlOppslagClient: LovmeAPI
     private val secureLogger = KotlinLogging.logger("tjenestekall")
     private val logger = KotlinLogging.logger { }
     init {
         consumer.subscribe(listOf(config.topic))
+        medlOppslagClient = SimulatedLovMeResponseClient()
     }
 
     fun pollMessages(): List<AapRecord> =

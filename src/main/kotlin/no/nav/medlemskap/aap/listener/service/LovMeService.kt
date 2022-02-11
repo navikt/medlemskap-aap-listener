@@ -1,37 +1,28 @@
 package no.nav.medlemskap.aap.listener.service
 
+import com.fasterxml.jackson.databind.JsonNode
 import mu.KotlinLogging
 import net.logstash.logback.argument.StructuredArguments.kv
+import no.nav.aap.avro.medlem.v1.ErMedlem
 import no.nav.aap.avro.medlem.v1.Medlem
+import no.nav.aap.avro.medlem.v1.Request
+import no.nav.aap.avro.medlem.v1.Response
 import no.nav.medlemskap.aap.listener.domain.AapRecord
 import no.nav.medlemskap.aap.listener.clients.RestClients
 import no.nav.medlemskap.aap.listener.clients.azuread.AzureAdClient
 import no.nav.medlemskap.aap.listener.clients.medloppslag.*
 import no.nav.medlemskap.aap.listener.config.Configuration
+import no.nav.medlemskap.aap.listener.jakson.JaksonParser
 
 class LovMeService(
     private val configuration: Configuration,
+    private val medlOppslagClient: LovmeAPI
 )
 {
     companion object {
         private val log = KotlinLogging.logger { }
 
     }
-    val azureAdClient = AzureAdClient(configuration)
-    val restClients = RestClients(
-        azureAdClient = azureAdClient,
-        configuration = configuration
-    )
-    val medlOppslagClient: LovmeAPI
-
-
-    init {
-    //TODO: Endre fra simulert til faktisk Lovme kall
-        //merk.. krever endringer i token (eget token for denne tjenesten)
-        medlOppslagClient = SimulatedLovMeResponseClient()
-    //medlOppslagClient=restClients.medlOppslag(configuration.register.medlemskapOppslagBaseUrl)
-    }
-
     suspend fun callLovMe(request: Medlem): String {
         val lovMeRequest = MedlOppslagRequest(
             fnr = request.personident,
@@ -45,9 +36,9 @@ class LovMeService(
     {
         if (validerSoknad(aapRecord.aapRequest)) {
             try {
-                val response = callLovMe(aapRecord.aapRequest)
-                println("response : $response")
-                aapRecord.logSendt()
+                var response = vurderAAPMeldemskap(aapRecord.aapRequest)
+                //TODO: Publish response to kafka
+                println("temporarily end of line. Response will be implemented shotly")
             }
             catch (t:Throwable){
                 aapRecord.logTekiskFeil(t)
@@ -56,6 +47,28 @@ class LovMeService(
             aapRecord.logIkkeSendt()
         }
     }
+
+    fun validerSoknad(aapRecord: Medlem): Boolean {
+        return true
+    }
+
+    suspend fun vurderAAPMeldemskap (request:Medlem):Medlem{
+        var aapResponse:Medlem = request
+        val lovmeResponseAsTekst = callLovMe(request)
+
+        val lovmeResponse:JsonNode = JaksonParser().parse(lovmeResponseAsTekst)
+        val response:Response = mapToAAPResponseObject(lovmeResponse)
+        aapResponse.response=response
+        return aapResponse
+    }
+
+    private fun mapToAAPResponseObject(lovmeResponse: JsonNode): Response {
+        val svar = lovmeResponse.get("resultat").get("svar").asText()
+        val begrunnelse = lovmeResponse.get("resultat").get("begrunnelse").asText()
+        val response = Response(ErMedlem.valueOf(svar),begrunnelse)
+        return response
+    }
+
     private fun AapRecord.logIkkeSendt() =
         LovMeService.log.info(
             "Søknad ikke  sendt til lovme basert på validering - aapID: ${aapRequest.id}, offsett: $offset, partiotion: $partition, topic: $topic",
@@ -72,8 +85,4 @@ class LovMeService(
             "Teknisk feil ved kall mot LovMe - aapID: ${aapRequest.id}, melding:"+t.message,
             kv("callId", aapRequest.id),
         )
-
-    fun validerSoknad(aapRecord: Medlem): Boolean {
-        return true
-    }
 }

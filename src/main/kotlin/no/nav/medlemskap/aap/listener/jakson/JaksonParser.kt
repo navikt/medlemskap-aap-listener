@@ -14,7 +14,7 @@ import java.time.LocalDateTime
 
 class JaksonParser {
     private val log = KotlinLogging.logger { }
-    fun parse(jsonString: String): LovmeSoknadDTO {
+    fun parse(jsonString: String): JsonNode {
         try {
             val mapper: ObjectMapper = ObjectMapper()
                 .registerKotlinModule()
@@ -27,13 +27,7 @@ class JaksonParser {
         }
         catch (t:Throwable){
             log.error("Unable to parse json. Dropping message. Cause : ${t.message}")
-            return LovmeSoknadDTO("",
-                SoknadstypeDTO.ARBEIDSTAKERE,SoknadsstatusDTO.SENDT,
-                "",null,
-                LocalDate.now(),
-                LocalDateTime.now(),
-                LocalDate.now(),
-                LocalDate.now(),false)
+            return ObjectMapper().createObjectNode()
         }
     }
 
