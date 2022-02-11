@@ -1,85 +1,96 @@
 package no.nav.medlemskap.aap.listener.service
 
+import com.fasterxml.jackson.databind.JsonNode
 import mu.KotlinLogging
 import net.logstash.logback.argument.StructuredArguments.kv
-import no.nav.medlemskap.aap.listener.domain.SoknadRecord
+import no.nav.aap.avro.medlem.v1.ErMedlem
+import no.nav.aap.avro.medlem.v1.Medlem
+import no.nav.aap.avro.medlem.v1.Request
+import no.nav.aap.avro.medlem.v1.Response
+import no.nav.medlemskap.aap.listener.Kafka.KafkaProduser
+import no.nav.medlemskap.aap.listener.domain.AapRecord
 import no.nav.medlemskap.aap.listener.clients.RestClients
 import no.nav.medlemskap.aap.listener.clients.azuread.AzureAdClient
-import no.nav.medlemskap.aap.listener.clients.medloppslag.Brukerinput
-import no.nav.medlemskap.aap.listener.clients.medloppslag.MedlOppslagClient
-import no.nav.medlemskap.aap.listener.clients.medloppslag.MedlOppslagRequest
-import no.nav.medlemskap.aap.listener.clients.medloppslag.Periode
+import no.nav.medlemskap.aap.listener.clients.medloppslag.*
 import no.nav.medlemskap.aap.listener.config.Configuration
-import no.nav.medlemskap.aap.listener.domain.*
+import no.nav.medlemskap.aap.listener.jakson.JaksonParser
 
 class LovMeService(
     private val configuration: Configuration,
+    private val medlOppslagClient: LovmeAPI,
+    private val kafkaProduser: KafkaProduser
 )
 {
     companion object {
         private val log = KotlinLogging.logger { }
 
     }
-    val azureAdClient = AzureAdClient(configuration)
-    val restClients = RestClients(
-        azureAdClient = azureAdClient,
-        configuration = configuration
-    )
-    val medlOppslagClient: MedlOppslagClient
-
-
-    init {
-    medlOppslagClient=restClients.medlOppslag(configuration.register.medlemskapOppslagBaseUrl)
-    }
-
-    suspend fun callLovMe(sykepengeSoknad: LovmeSoknadDTO)
-    {
+    suspend fun callLovMe(request: Medlem): String {
         val lovMeRequest = MedlOppslagRequest(
-            fnr = sykepengeSoknad.fnr,
-            førsteDagForYtelse = sykepengeSoknad.fom.toString(),
-            periode = Periode(sykepengeSoknad.fom.toString(), sykepengeSoknad.tom?.toString()),
-            brukerinput = Brukerinput(false)
+            fnr = request.personident,
+            førsteDagForYtelse = request.request.mottattDato.toString(),
+            periode = Periode(request.request.mottattDato.toString(), request.request.mottattDato.toString()),
+            brukerinput = Brukerinput(request.request.arbeidetUtenlands)
         )
-        medlOppslagClient.vurderMedlemskap(lovMeRequest, sykepengeSoknad.id)
-
-
-
+        return medlOppslagClient.vurderMedlemskap(lovMeRequest, request.id)
     }
-    suspend fun handle(soknadRecord: SoknadRecord)
+    suspend fun handle(aapRecord: AapRecord)
     {
-        if (validerSoknad(soknadRecord.sykepengeSoknad)) {
+        if (validerSoknad(aapRecord.aapRequest)) {
             try {
-                callLovMe(soknadRecord.sykepengeSoknad)
-                soknadRecord.logSendt()
-                //Metrics.incSuccessfulLovmePosts()
+                var response = vurderAAPMeldemskap(aapRecord.aapRequest)
+                aapRecord.logSendt()
+                kafkaProduser.publish(configuration.kafkaConfig.topic,aapRecord.aapRequest.id,response)
+                aapRecord.logSvart()
             }
             catch (t:Throwable){
-                //Metrics.incFailedLovmePosts()
-                soknadRecord.logTekiskFeil(t)
+                aapRecord.logTekiskFeil(t)
             }
         } else {
-            soknadRecord.logIkkeSendt()
+            aapRecord.logIkkeSendt()
         }
     }
-    private fun SoknadRecord.logIkkeSendt() =
-        LovMeService.log.info(
-            "Søknad ikke  sendt til lovme basert på validering - sykmeldingId: ${sykepengeSoknad.id}, offsett: $offset, partiotion: $partition, topic: $topic",
-            kv("callId", sykepengeSoknad.id),
-        )
 
-    private fun SoknadRecord.logSendt() =
-        LovMeService.log.info(
-            "Søknad videresendt til Lovme - sykmeldingId: ${sykepengeSoknad.id}, offsett: $offset, partiotion: $partition, topic: $topic",
-            kv("callId", sykepengeSoknad.id),
-        )
-    private fun SoknadRecord.logTekiskFeil(t:Throwable) =
-        LovMeService.log.info(
-            "Teknisk feil ved kall mot LovMe - sykmeldingId: ${sykepengeSoknad.id}, melding:"+t.message,
-            kv("callId", sykepengeSoknad.id),
-        )
-
-    fun validerSoknad(sykepengeSoknad: LovmeSoknadDTO): Boolean {
-        return !sykepengeSoknad.fnr.isNullOrBlank() &&
-                !sykepengeSoknad.id.isNullOrBlank()
+    fun validerSoknad(aapRecord: Medlem): Boolean {
+        return true
     }
+
+    suspend fun vurderAAPMeldemskap (request:Medlem):Medlem{
+        var aapResponse:Medlem = request
+        val lovmeResponseAsTekst = callLovMe(request)
+
+        val lovmeResponse:JsonNode = JaksonParser().parse(lovmeResponseAsTekst)
+        val response:Response = mapToAAPResponseObject(lovmeResponse)
+        aapResponse.response=response
+        return aapResponse
+    }
+
+    private fun mapToAAPResponseObject(lovmeResponse: JsonNode): Response {
+        val svar = lovmeResponse.get("resultat").get("svar").asText()
+        val begrunnelse = lovmeResponse.get("resultat").get("begrunnelse").asText()
+        val response = Response(ErMedlem.valueOf(svar),begrunnelse)
+        return response
+    }
+
+    private fun AapRecord.logIkkeSendt() =
+        LovMeService.log.info(
+            "Søknad ikke  sendt til lovme basert på validering - aapID: ${aapRequest.id}, offsett: $offset, partiotion: $partition, topic: $topic",
+            kv("callId", aapRequest.id),
+        )
+
+    private fun AapRecord.logSendt() =
+        LovMeService.log.info(
+            "Søknad videresendt til Lovme - aapID: ${aapRequest.id}, offsett: $offset, partiotion: $partition, topic: $topic",
+            kv("callId", aapRequest.id),
+        )
+    private fun AapRecord.logTekiskFeil(t:Throwable) =
+        LovMeService.log.info(
+            "Teknisk feil ved kall mot LovMe - aapID: ${aapRequest.id}, melding:"+t.message,
+            kv("callId", aapRequest.id),
+        )
+    private fun AapRecord.logSvart() =
+        LovMeService.log.info(
+            "Respons gitt til AAP - aapID: ${aapRequest.id}, topic: $topic",
+            kv("callId", aapRequest.id),
+        )
 }

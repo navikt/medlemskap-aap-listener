@@ -15,7 +15,7 @@ import kotlinx.coroutines.withContext
 import java.io.Writer
 
 fun naisLiveness(consumeJob: Job) = embeddedServer(Netty, applicationEngineEnvironment {
-    connector { port = 8080 }
+    connector { port = 8081 }
     module {
 
         install(MicrometerMetrics) {

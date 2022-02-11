@@ -8,9 +8,9 @@ val logbackVersion = "1.2.3"
 val mainClass = "no.nav.medlemskap.aap.lytter.ApplicationKt"
 
 plugins {
-    kotlin("jvm") version "1.5.10"
+    kotlin("jvm") version "1.6.10"
     application
-    id("com.github.davidmc24.gradle.plugin.avro") version "1.2.0"
+    id("com.github.davidmc24.gradle.plugin.avro") version "1.3.0"
     id("com.github.johnrengelman.shadow") version "7.0.0"
 }
 
@@ -23,11 +23,13 @@ repositories {
     maven("https://jitpack.io")
     maven("https://repo.adeo.no/repository/maven-releases")
     maven("https://repo.adeo.no/repository/nexus2-m2internal")
+    maven("https://github-package-registry-mirror.gc.nav.no/cached/maven-release")
 }
 
 dependencies {
     implementation(kotlin("stdlib"))
     implementation("com.github.navikt:rapids-and-rivers:1.5e3ca6a")
+    implementation("no.nav.aap:avroskjema:1.0.0")
     implementation("io.ktor:ktor-client-apache:$ktorVersion")
     implementation("io.github.resilience4j:resilience4j-retry:$resilience4jVersion")
     implementation("io.github.resilience4j:resilience4j-kotlin:$resilience4jVersion")
@@ -48,7 +50,7 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
     // 2.8.0 er tilgjengelig, burde kanskje oppdatere
     implementation("org.apache.kafka:kafka-clients:2.5.0")
-    implementation("org.apache.avro:avro:1.10.2")
+    implementation("org.apache.avro:avro:1.11.0")
     implementation("io.confluent:kafka-avro-serializer:5.2.2")
     testImplementation(platform("org.junit:junit-bom:5.7.1"))
     testImplementation("org.junit.jupiter:junit-jupiter")
@@ -59,7 +61,7 @@ dependencies {
 
 tasks {
     compileKotlin {
-        kotlinOptions.jvmTarget = "15"
+        kotlinOptions.jvmTarget = "17"
         kotlinOptions.freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
     }
     shadowJar {
@@ -78,10 +80,10 @@ tasks {
     test {
         useJUnitPlatform()
         //Trengs inntil videre for bytebuddy med java 16, som brukes av mockk.
-        jvmArgs = listOf("-Dnet.bytebuddy.experimental=true")
+        //jvmArgs = listOf("-Dnet.bytebuddy.experimental=true")
     }
 }
 
 application {
-    mainClass.set("no.nav.medlemskap.aap.lytter.ApplicationKt")
+    mainClass.set("no.nav.medlemskap.aap.listener.ApplicationKt")
 }

@@ -31,7 +31,12 @@ private val defaultProperties = ConfigurationMap(
         "KAFKA_CREDSTORE_PASSWORD" to "changeme",
         "KAFKA_KEYSTORE_PATH" to "c:\\dev\\secrets\\client.keystore.p12",
         "KAFKA_CREDSTORE_PASSWORD" to "changeme",
-        "KAFKA_ENABLED" to "false"
+        "KAFKA_ENABLED" to "Ja",
+        "KAFKA_SCHEMA_REGISTRY" to "https://nav-dev-kafka-nav-dev.aivencloud.com:26487",
+        "KAFKA_SCHEMA_REGISTRY_PASSWORD" to "qyIiyGxjMCLRtr2K",
+        "KAFKA_SCHEMA_REGISTRY_USER" to "medlemskap_oppslag_a0ee9eab_NVs"
+
+
     )
 )
 
@@ -98,15 +103,10 @@ data class Configuration(
         val keystoreLocation: String = "KAFKA_KEYSTORE_PATH".configProperty(),
         val keystorePassword: String = "KAFKA_CREDSTORE_PASSWORD".configProperty(),
         val enabled: String = "KAFKA_ENABLED".configProperty(),
-        val topic : String =  "medlemskap.test-medlemskap-oppslag",
-        val rapidApplication: Map<String, String> = mapOf(
-            "RAPID_APP_NAME" to "medlemskap-aap-listener",
-            "KAFKA_BOOTSTRAP_SERVERS" to bootstrapServers,
-            "KAFKA_RESET_POLICY" to "earliest",
-            "KAFKA_RAPID_TOPIC" to topic,
-            "KAFKA_CONSUMER_GROUP_ID" to groupID,
-            "NAV_TRUSTSTORE_PATH" to trustStorePath,
-            "NAV_TRUSTSTORE_PASSWORD" to trustStorePassword
-        )
+        val topic : String =  "medlemskap.test-medlemskap-oppslag-avro",
+        val kafka_schema_registry :String = "KAFKA_SCHEMA_REGISTRY".configProperty(),
+        val kafka_schema_registry_password :String = "KAFKA_SCHEMA_REGISTRY_PASSWORD".configProperty(),
+        val kafka_schema_registry_user :String = "KAFKA_SCHEMA_REGISTRY_USER".configProperty()
+
     )
 }
