@@ -22,8 +22,6 @@ repositories {
     mavenCentral()
     maven("https://packages.confluent.io/maven/")
     maven("https://jitpack.io")
-    maven("https://repo.adeo.no/repository/maven-releases")
-    maven("https://repo.adeo.no/repository/nexus2-m2internal")
     maven {
         url = uri("https://maven.pkg.github.com/navikt/aap-avroskjema")
         credentials {
