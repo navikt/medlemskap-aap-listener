@@ -103,7 +103,8 @@ data class Configuration(
         val keystoreLocation: String = "KAFKA_KEYSTORE_PATH".configProperty(),
         val keystorePassword: String = "KAFKA_CREDSTORE_PASSWORD".configProperty(),
         val enabled: String = "KAFKA_ENABLED".configProperty(),
-        val topic : String =  "medlemskap.test-medlemskap-oppslag-avro",
+        val topic : String =  "aap.medlem.v1",
+        val test_topic : String =  "medlemskap.test-medlemskap-oppslag-avro",
         val kafka_schema_registry :String = "KAFKA_SCHEMA_REGISTRY".configProperty(),
         val kafka_schema_registry_password :String = "KAFKA_SCHEMA_REGISTRY_PASSWORD".configProperty(),
         val kafka_schema_registry_user :String = "KAFKA_SCHEMA_REGISTRY_USER".configProperty()
