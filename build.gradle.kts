@@ -16,14 +16,21 @@ plugins {
 
 group = "no.nav.medlemskap"
 version = "1.0-SNAPSHOT"
-
+val githubUser: String by project
+val githubPassword: String by project
 repositories {
     mavenCentral()
     maven("https://packages.confluent.io/maven/")
     maven("https://jitpack.io")
     maven("https://repo.adeo.no/repository/maven-releases")
     maven("https://repo.adeo.no/repository/nexus2-m2internal")
-    maven("https://github-package-registry-mirror.gc.nav.no/cached/maven-release")
+    maven {
+        url = uri("https://maven.pkg.github.com/navikt/aap-avroskjema")
+        credentials {
+            username = githubUser
+            password = githubPassword
+        }
+    }
 }
 
 dependencies {
