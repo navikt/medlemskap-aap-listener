@@ -14,6 +14,7 @@ open class KafkaConfig(
 ) {
 
     val topic = Configuration.KafkaConfig().topic
+    val test_topic = Configuration.KafkaConfig().test_topic
     val enabled = Configuration.KafkaConfig().enabled
 
 
