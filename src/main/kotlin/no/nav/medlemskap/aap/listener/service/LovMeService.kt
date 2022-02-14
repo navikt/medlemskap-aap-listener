@@ -40,7 +40,7 @@ class LovMeService(
             try {
                 var response = vurderAAPMeldemskap(aapRecord.aapRequest)
                 aapRecord.logSendt()
-                kafkaProduser.publish(configuration.kafkaConfig.topic,aapRecord.aapRequest.id,response)
+                kafkaProduser.publish(aapRecord.topic,aapRecord.aapRequest.id,response)
                 aapRecord.logSvart()
             }
             catch (t:Throwable){

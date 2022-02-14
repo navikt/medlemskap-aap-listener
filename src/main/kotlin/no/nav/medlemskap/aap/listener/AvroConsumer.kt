@@ -39,7 +39,7 @@ class AvroConsumer(
     private val secureLogger = KotlinLogging.logger("tjenestekall")
     private val logger = KotlinLogging.logger { }
     init {
-        consumer.subscribe(listOf(config.topic))
+        consumer.subscribe(listOf(config.topic,config.test_topic))
         medlOppslagClient = SimulatedLovMeResponseClient()
     }
 
