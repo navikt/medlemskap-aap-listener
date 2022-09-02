@@ -1,11 +1,12 @@
 package no.nav.medlemskap.aap.listener.service
 
-import no.nav.aap.avro.medlem.v1.Medlem
-import no.nav.medlemskap.aap.listener.Kafka.KafkaProduser
+
+import no.nav.medlemskap.aap.listener.domain.MedlemKafkaDto
+import no.nav.medlemskap.aap.listener.kafka.KafkaProduser
 
 class TestKafkaProducer:KafkaProduser {
-    val broker: HashMap<String,ArrayList<Medlem>> = HashMap()
-    override fun publish(topic: String, key: String, value: Medlem) {
+    val broker: HashMap<String,ArrayList<MedlemKafkaDto>> = HashMap()
+    override fun publish(topic: String, key: String, value: MedlemKafkaDto) {
         if (broker.containsKey(topic)){
             broker.get(topic)?.add(value)
         }

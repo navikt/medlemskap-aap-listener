@@ -3,17 +3,14 @@ package no.nav.medlemskap.aap.listener.service
 import com.fasterxml.jackson.databind.JsonNode
 import mu.KotlinLogging
 import net.logstash.logback.argument.StructuredArguments.kv
-import no.nav.aap.avro.medlem.v1.ErMedlem
-import no.nav.aap.avro.medlem.v1.Medlem
-import no.nav.aap.avro.medlem.v1.Request
-import no.nav.aap.avro.medlem.v1.Response
-import no.nav.medlemskap.aap.listener.Kafka.KafkaProduser
+
+import no.nav.medlemskap.aap.listener.kafka.KafkaProduser
 import no.nav.medlemskap.aap.listener.domain.AapRecord
-import no.nav.medlemskap.aap.listener.clients.RestClients
-import no.nav.medlemskap.aap.listener.clients.azuread.AzureAdClient
 import no.nav.medlemskap.aap.listener.clients.medloppslag.*
 import no.nav.medlemskap.aap.listener.config.Configuration
-import no.nav.medlemskap.aap.listener.jakson.JaksonParser
+import no.nav.medlemskap.aap.listener.domain.MedlemKafkaDto
+import no.nav.medlemskap.aap.listener.jackson.JacksonParser
+
 
 class LovMeService(
     private val configuration: Configuration,
@@ -25,14 +22,14 @@ class LovMeService(
         private val log = KotlinLogging.logger { }
 
     }
-    suspend fun callLovMe(request: Medlem): String {
+    suspend fun callLovMe(request: MedlemKafkaDto): String {
         val lovMeRequest = MedlOppslagRequest(
             fnr = request.personident,
-            førsteDagForYtelse = request.request.mottattDato.toString(),
-            periode = Periode(request.request.mottattDato.toString(), request.request.mottattDato.toString()),
+            førsteDagForYtelse = request.request!!.mottattDato.toString(),
+            periode = Periode(request.request!!.mottattDato.toString(), request.request.mottattDato.toString()),
             brukerinput = Brukerinput(request.request.arbeidetUtenlands)
         )
-        return medlOppslagClient.vurderMedlemskap(lovMeRequest, request.id)
+        return medlOppslagClient.vurderMedlemskap(lovMeRequest, request.id.toString())
     }
     suspend fun handle(aapRecord: AapRecord)
     {
@@ -40,7 +37,7 @@ class LovMeService(
             try {
                 var response = vurderAAPMeldemskap(aapRecord.aapRequest)
                 aapRecord.logSendt()
-                kafkaProduser.publish(aapRecord.topic,aapRecord.aapRequest.id,response)
+                kafkaProduser.publish(aapRecord.topic,aapRecord.aapRequest.id.toString(),response)
                 aapRecord.logSvart()
             }
             catch (t:Throwable){
@@ -51,24 +48,26 @@ class LovMeService(
         }
     }
 
-    fun validerSoknad(aapRecord: Medlem): Boolean {
+    fun validerSoknad(aapRecord: MedlemKafkaDto): Boolean {
         return true
     }
 
-    suspend fun vurderAAPMeldemskap (request:Medlem):Medlem{
-        var aapResponse:Medlem = request
+    suspend fun vurderAAPMeldemskap (request:MedlemKafkaDto):MedlemKafkaDto{
         val lovmeResponseAsTekst = callLovMe(request)
-
-        val lovmeResponse:JsonNode = JaksonParser().parse(lovmeResponseAsTekst)
-        val response:Response = mapToAAPResponseObject(lovmeResponse)
-        aapResponse.response=response
-        return aapResponse
+        val lovmeResponse:JsonNode = JacksonParser().parseToJsonNode(lovmeResponseAsTekst)
+        val response:MedlemKafkaDto.Response = mapToAAPResponseObject(lovmeResponse)
+        return MedlemKafkaDto(
+            personident = request.personident,
+            id = request.id,
+            request = request.request,
+            response = response
+        )
     }
 
-    private fun mapToAAPResponseObject(lovmeResponse: JsonNode): Response {
+    private fun mapToAAPResponseObject(lovmeResponse: JsonNode): MedlemKafkaDto.Response {
         val svar = lovmeResponse.get("resultat").get("svar").asText()
         val begrunnelse = lovmeResponse.get("resultat").get("begrunnelse").asText()
-        val response = Response(ErMedlem.valueOf(svar),begrunnelse)
+        val response = MedlemKafkaDto.Response(MedlemKafkaDto.ErMedlem.valueOf(svar), begrunnelse)
         return response
     }
 

@@ -12,7 +12,7 @@ fun main() {
     Application().start()
 }
 
-class Application(private val env: Environment = System.getenv(), private val consumer: AvroConsumer = AvroConsumer(env)) {
+class Application(private val env: Environment = System.getenv(), private val consumer: JsonConsumer = JsonConsumer(env)) {
     companion object {
         val log: Logger = LoggerFactory.getLogger(Application::class.java)
     }

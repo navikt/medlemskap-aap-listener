@@ -1,18 +1,16 @@
 package no.nav.kafkaproduser
 
 
-import io.confluent.kafka.schemaregistry.client.SchemaRegistryClientConfig
-import io.confluent.kafka.serializers.KafkaAvroSerializer
-import no.nav.aap.avro.medlem.v1.ErMedlem
-import no.nav.aap.avro.medlem.v1.Medlem
-import no.nav.aap.avro.medlem.v1.Request
-import no.nav.aap.avro.medlem.v1.Response
+
+
+
 import no.nav.medlemskap.aap.listener.config.Configuration
 import no.nav.medlemskap.aap.listener.config.Environment
 import no.nav.medlemskap.aap.listener.config.KafkaConfig
-import org.apache.avro.generic.GenericRecord
+import no.nav.medlemskap.aap.listener.domain.MedlemKafkaDto
+
 import org.apache.kafka.clients.CommonClientConfigs
-import org.apache.kafka.clients.consumer.ConsumerConfig
+
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.Producer
 import org.apache.kafka.clients.producer.ProducerConfig
@@ -44,7 +42,7 @@ class SimpleProducer(brokers: KafkaConfig) {
         CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG to Configuration.KafkaConfig().bootstrapServers,
         ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
         CommonClientConfigs.CLIENT_ID_CONFIG to "Produser",//Configuration.KafkaConfig().clientId,
-        ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to KafkaAvroSerializer::class.java,
+        ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
         ProducerConfig.CLIENT_ID_CONFIG to Configuration.KafkaConfig().groupID,
         CommonClientConfigs.SECURITY_PROTOCOL_CONFIG to SecurityProtocol.SASL_SSL.name,
         SaslConfigs.SASL_MECHANISM to "PLAIN",
@@ -54,21 +52,15 @@ class SimpleProducer(brokers: KafkaConfig) {
         SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG to Configuration.KafkaConfig().trustStorePath,
         SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG to Configuration.KafkaConfig().keystorePassword,
         SslConfigs.SSL_KEYSTORE_TYPE_CONFIG to Configuration.KafkaConfig().keystoreType,
-        "schema.registry.url" to "https://nav-dev-kafka-nav-dev.aivencloud.com:26487",
-        SchemaRegistryClientConfig.BASIC_AUTH_CREDENTIALS_SOURCE to "USER_INFO" ,
-        SchemaRegistryClientConfig.USER_INFO_CONFIG to format("%s:%s", "medlemskap_oppslag_a0ee9eab_NVs", "qyIiyGxjMCLRtr2K")
-
-
-
     )
     private val producer = createProducer()
-    private fun createProducer(): Producer<String, Medlem> {
+    private fun createProducer(): Producer<String, MedlemKafkaDto> {
 
-        return KafkaProducer<String, Medlem>(inst2Config())
+        return KafkaProducer<String, MedlemKafkaDto>(inst2Config())
     }
 
     fun produce(ratePerSecond: Int) {
-        val medlem = Medlem("id",UUID.randomUUID().toString(), Request(LocalDate.now(),"AAP",false), null)
+        val medlem = MedlemKafkaDto("id",UUID.randomUUID(), MedlemKafkaDto.Request(LocalDate.now(), "AAP", false), null)
         //val jsonString: String = File("./src/main/resources/sampleRequest.json").readText(Charsets.UTF_8)
         ratePerSecond
         while(true) {
