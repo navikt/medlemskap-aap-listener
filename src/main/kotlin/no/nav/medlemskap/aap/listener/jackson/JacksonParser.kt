@@ -21,7 +21,8 @@ class JacksonParser {
                 .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS, true)
             return mapper.readValue(jsonString)
         } catch (t: Throwable) {
-            log.error("Unable to parse json. Dropping message. Cause : ${t.message}")
+            log.error("Unable to parse json to MedlemKafkaDto . Dropping message. Cause : ${t.message}. json : $jsonString")
+            log.error(t.printStackTrace().toString())
             return MedlemKafkaDto(
                 personident = "",
                 id= UUID.randomUUID(),
@@ -42,7 +43,7 @@ class JacksonParser {
             return  mapper.readValue(jsonString)
         }
         catch (t:Throwable){
-            log.error("Unable to parse json. Dropping message. Cause : ${t.message}")
+            log.error("Unable to parse json String ti JsonNode. Dropping message. Cause : ${t.message} . Json: $jsonString")
             return ObjectMapper().createObjectNode()
         }
     }
@@ -58,7 +59,7 @@ class JacksonParser {
                 .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS, true)
             return mapper.writeValueAsString(obj)
         } catch (t: Throwable) {
-            log.error("Unable to parse json. Dropping message. Cause : ${t.message}")
+            log.error("Unable to parse Object to String. Dropping message. Cause : ${t.message}")
             throw t;
         }
     }

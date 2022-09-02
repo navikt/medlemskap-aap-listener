@@ -8,6 +8,7 @@ import no.nav.medlemskap.aap.listener.config.Configuration
 import no.nav.medlemskap.aap.listener.config.Environment
 import no.nav.medlemskap.aap.listener.config.KafkaConfig
 import no.nav.medlemskap.aap.listener.domain.MedlemKafkaDto
+import no.nav.medlemskap.aap.listener.jackson.JacksonParser
 
 import org.apache.kafka.clients.CommonClientConfigs
 
@@ -29,7 +30,7 @@ import java.util.logging.Level
 import java.util.logging.Logger
 
 fun main(args: Array<String>) {
-    SimpleProducer(KafkaConfig(System.getenv())).produce(1)
+    SimpleProducer(KafkaConfig(System.getenv())).produce(10)
 }
 
 class SimpleProducer(brokers: KafkaConfig) {
@@ -54,26 +55,32 @@ class SimpleProducer(brokers: KafkaConfig) {
         SslConfigs.SSL_KEYSTORE_TYPE_CONFIG to Configuration.KafkaConfig().keystoreType,
     )
     private val producer = createProducer()
-    private fun createProducer(): Producer<String, MedlemKafkaDto> {
+    private fun createProducer(): Producer<String, String> {
 
-        return KafkaProducer<String, MedlemKafkaDto>(inst2Config())
+        return KafkaProducer<String, String>(inst2Config())
     }
 
     fun produce(ratePerSecond: Int) {
-        val medlem = MedlemKafkaDto("id",UUID.randomUUID(), MedlemKafkaDto.Request(LocalDate.now(), "AAP", false), null)
+        val medlem = MedlemKafkaDto(
+            "id",
+            UUID.randomUUID(),
+            MedlemKafkaDto.Request(
+                LocalDate.now(),
+                "AAP",
+                false),
+            null)
         //val jsonString: String = File("./src/main/resources/sampleRequest.json").readText(Charsets.UTF_8)
-        ratePerSecond
         while(true) {
 
             val futureResult = producer.send(
                 ProducerRecord(
                     "medlemskap.test-medlemskap-oppslag-avro",
-                    UUID.randomUUID().toString(), medlem
+                    UUID.randomUUID().toString(), JacksonParser().parseToJsonString(medlem)
                 )
             )
 
             logger.log(Level.INFO, "Sent a record")
-
+            logger.log(Level.INFO,JacksonParser().parseToJsonString(medlem))
             Thread.sleep(1000*ratePerSecond.toLong())
 
             // wait for the write acknowledgment
