@@ -1,14 +1,16 @@
-package no.nav.medlemskap.aap.listener.clients.medloppslag
+package no.nav.medlemskap.aap.listener.service
 
+import no.nav.medlemskap.aap.listener.clients.medloppslag.LovmeAPI
+import no.nav.medlemskap.aap.listener.clients.medloppslag.MedlOppslagRequest
 import java.util.*
 
 
-class SimulatedLovMeResponseClient():LovmeAPI {
+class SimulatedLovMeResponseClient(): LovmeAPI {
     override suspend fun vurderMedlemskap(medlOppslagRequest: MedlOppslagRequest, callId: String): String {
-        if (callId=="1") {
+        if (callId== UuidValues.JA.value) {
             return mockJaResponse()
         }
-        return if (callId=="2") {
+        return if (callId==UuidValues.UAVLART.value) {
             mockUavklartResponse()
         } else{
             mockRandomResponse()

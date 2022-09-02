@@ -4,22 +4,21 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.time.delay
 import mu.KotlinLogging
-import no.nav.aap.avro.medlem.v1.Medlem
-import no.nav.medlemskap.aap.listener.Kafka.AapKafkaProducer
+import no.nav.medlemskap.aap.listener.kafka.AapKafkaProducer
 import no.nav.medlemskap.aap.listener.clients.RestClients
 import no.nav.medlemskap.aap.listener.clients.azuread.AzureAdClient
 import no.nav.medlemskap.aap.listener.clients.medloppslag.LovmeAPI
-import no.nav.medlemskap.aap.listener.clients.medloppslag.SimulatedLovMeResponseClient
 import no.nav.medlemskap.aap.listener.config.Configuration
 import no.nav.medlemskap.aap.listener.config.Environment
 import no.nav.medlemskap.aap.listener.config.KafkaConfig
 import no.nav.medlemskap.aap.listener.domain.AapRecord
+import no.nav.medlemskap.aap.listener.jackson.JacksonParser
 import no.nav.medlemskap.aap.listener.service.LovMeService
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import java.time.Duration
 import java.util.Objects.isNull
 
-class AvroConsumer(
+class JsonConsumer(
     environment: Environment,
     private val config: KafkaConfig = KafkaConfig(environment),
     private val service: LovMeService = LovMeService(
@@ -27,7 +26,7 @@ class AvroConsumer(
         SimulatedLovMeResponseClient(),
         AapKafkaProducer(Configuration())
     ),
-    private val consumer: KafkaConsumer<String, Medlem> = config.createAvroConsumer(),
+    private val consumer: KafkaConsumer<String, String> = config.createAvroConsumer(),
 )
 {
     val azureAdClient = AzureAdClient(Configuration())
@@ -46,7 +45,14 @@ class AvroConsumer(
     fun pollMessages(): List<AapRecord> =
 
             consumer.poll(Duration.ofSeconds(4))
-                .map { AapRecord(it.partition(),it.offset(),it.key(),it.topic(),it.value()) }
+                .map {
+                    AapRecord(
+                        it.partition(),
+                        it.offset(),
+                        it.key(),
+                        it.topic(),
+                        JacksonParser().parse(it.value()))
+                }
                 .filter { isNull(it.aapRequest.response)}
 
     fun flow(): Flow<List<AapRecord>> =
