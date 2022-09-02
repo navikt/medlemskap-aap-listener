@@ -1,5 +1,5 @@
 val ktorVersion = "1.6.0"
-val jacksonVersion = "2.10.5"
+val jacksonVersion = "2.13.3"
 val konfigVersion = "1.6.10.0"
 val kotlinLoggerVersion = "1.8.3"
 val resilience4jVersion = "1.5.0"
