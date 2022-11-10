@@ -1,0 +1,69 @@
+name: PR build
+
+on: [ pull_request ]
+
+env:
+  APP: medlemskap-aap-listener
+jobs:
+  build-branch:
+    name: Build and publish Docker image for PR-branch
+    runs-on: ubuntu-latest
+    env:
+      IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Set up Java
+        uses: actions/setup-java@v1
+        with:
+          java-version: '12.x'
+
+      - name: Cache gradle dependencies
+        uses: actions/cache@v1
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle.kts') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+      - name: Build with Gradle
+        run: ./gradlew test shadowJar --info
+        env:
+          ORG_GRADLE_PROJECT_githubUser: x-access-token
+          ORG_GRADLE_PROJECT_githubPassword: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and Publish Docker image
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          docker build -t $IMAGE .
+          docker login ghcr.io -u ${GITHUB_REPOSITORY} -p ${GITHUB_TOKEN}
+          docker push $IMAGE
+      - name: Archive NAIS yaml
+        uses: actions/upload-artifact@v1
+        with:
+          name: nais-dev-yaml
+          path: deploy
+
+  deploypreprod:
+    name: Deploy PR-branch to dev
+    needs: [build-branch]
+    runs-on: ubuntu-latest
+    env:
+      IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
+    steps:
+      - name: Fetch NAIS yaml
+        uses: actions/download-artifact@v1
+        with:
+          name: nais-dev-yaml
+          path: deploy
+
+      - uses: nais/deploy/actions/deploy@v1
+        env:
+          APIKEY: ${{ secrets.NAIS_DEPLOY_API_KEY }}
+          CLUSTER: dev-gcp
+          RESOURCE: deploy/preprod.yaml
+          VARS: deploy/vars.yaml
+          VAR: alerts_slack_channel=#team-p3-medlemskap-notifications
+          PRINT_PAYLOAD: true
