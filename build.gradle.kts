@@ -1,14 +1,15 @@
-val ktorVersion = "1.6.0"
+val ktorVersion = "2.1.2"
 val jacksonVersion = "2.13.3"
 val konfigVersion = "1.6.10.0"
 val kotlinLoggerVersion = "1.8.3"
 val resilience4jVersion = "1.5.0"
-val logstashVersion = "6.4"
-val logbackVersion = "1.2.3"
+val logstashVersion = "7.2"
+val logbackVersion = "1.2.9"
+val httpClientVersion = "4.5.13"
 val mainClass = "no.nav.medlemskap.aap.lytter.ApplicationKt"
 
 plugins {
-    kotlin("jvm") version "1.6.10"
+    kotlin("jvm") version "1.7.10"
     application
     id("com.github.davidmc24.gradle.plugin.avro") version "1.3.0"
     id("com.github.johnrengelman.shadow") version "7.0.0"
@@ -33,19 +34,25 @@ repositories {
 
 dependencies {
     implementation(kotlin("stdlib"))
-    implementation("io.ktor:ktor-client-apache:$ktorVersion")
     implementation("io.github.resilience4j:resilience4j-retry:$resilience4jVersion")
     implementation("io.github.resilience4j:resilience4j-kotlin:$resilience4jVersion")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
     implementation("com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion")
     implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion")
-    implementation("io.ktor:ktor-server-netty:$ktorVersion")
+    implementation("io.ktor:ktor-server-netty:$ktorVersion") {
+        exclude(group = "io.netty", module = "netty-codec")
+        exclude(group = "io.netty", module = "netty-codec-http")
+    }
+    implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
+    implementation("io.ktor:ktor-server-content-negotiation:$ktorVersion")
+    implementation("io.ktor:ktor-serialization-jackson:$ktorVersion")
+    implementation("io.ktor:ktor-client-apache:$ktorVersion")
     implementation("io.ktor:ktor-client-core:$ktorVersion")
     implementation("io.ktor:ktor-client-cio:$ktorVersion")
     implementation("io.ktor:ktor-client-jackson:$ktorVersion")
     implementation("io.ktor:ktor-client-auth:$ktorVersion")
-    implementation("io.ktor:ktor-metrics-micrometer:$ktorVersion")
+    implementation("io.ktor:ktor-server-metrics-micrometer-jvm:2.1.2")
     implementation("io.micrometer:micrometer-registry-prometheus:1.7.0")
     implementation("com.natpryce:konfig:$konfigVersion")
     implementation("io.github.microutils:kotlin-logging:$kotlinLoggerVersion")
