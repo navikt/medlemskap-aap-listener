@@ -3,6 +3,7 @@ package no.nav.medlemskap.aap.listener.clients.medloppslag
 
 import io.github.resilience4j.retry.Retry
 import io.ktor.client.*
+import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import no.nav.medlemskap.aap.listener.clients.azuread.AzureAdClient
@@ -25,8 +26,8 @@ class MedlOppslagClient(
                 header(HttpHeaders.Authorization, "Bearer ${token.token}")
                 header("Nav-Call-Id", callId)
                 header("X-Correlation-Id", callId)
-                body = medlOppslagRequest
-            }
+                setBody(medlOppslagRequest)
+            }.body()
         }
     }
 }

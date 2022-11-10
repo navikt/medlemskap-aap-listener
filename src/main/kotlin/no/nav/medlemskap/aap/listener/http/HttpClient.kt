@@ -1,24 +1,35 @@
 package no.nav.medlemskap.aap.listener.http
 
+import com.fasterxml.jackson.core.util.DefaultIndenter
+import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.apache.Apache
+import io.ktor.client.engine.apache.*
 import io.ktor.client.engine.cio.CIO
-import io.ktor.client.features.json.JacksonSerializer
-import io.ktor.client.features.json.JsonFeature
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.serialization.jackson.*
 import org.apache.http.impl.conn.SystemDefaultRoutePlanner
 import java.net.ProxySelector
 
 internal val apacheHttpClient = HttpClient(Apache) {
-    install(JsonFeature) {
-        serializer = JacksonSerializer {
-            this.registerModule(JavaTimeModule())
-                .configure(SerializationFeature.INDENT_OUTPUT, true)
+    this.expectSuccess = true
+    install(ContentNegotiation) {
+        jackson {
+            configure(
+                SerializationFeature.INDENT_OUTPUT, true
+            )
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                 .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS, true)
+            setDefaultPrettyPrinter(
+                DefaultPrettyPrinter().apply {
+                    indentArraysWith(DefaultPrettyPrinter.FixedSpaceIndenter.instance)
+                    indentObjectsWith(DefaultIndenter("  ", "\n"))
+                }
+            )
+            registerModule(JavaTimeModule())
         }
     }
 
@@ -30,12 +41,21 @@ internal val apacheHttpClient = HttpClient(Apache) {
 }
 
 internal val cioHttpClient = HttpClient(CIO) {
-    install(JsonFeature) {
-        serializer = JacksonSerializer {
-            this.registerModule(JavaTimeModule())
-                .configure(SerializationFeature.INDENT_OUTPUT, true)
+    this.expectSuccess = true
+    install(ContentNegotiation) {
+        jackson {
+            configure(
+                SerializationFeature.INDENT_OUTPUT, true
+            )
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                 .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS, true)
+            setDefaultPrettyPrinter(
+                DefaultPrettyPrinter().apply {
+                    indentArraysWith(DefaultPrettyPrinter.FixedSpaceIndenter.instance)
+                    indentObjectsWith(DefaultIndenter("  ", "\n"))
+                }
+            )
+            registerModule(JavaTimeModule())
         }
     }
 
@@ -45,12 +65,21 @@ internal val cioHttpClient = HttpClient(CIO) {
 }
 
 internal val httpClient = HttpClient {
-    install(JsonFeature) {
-        serializer = JacksonSerializer {
-            this.registerModule(JavaTimeModule())
-                .configure(SerializationFeature.INDENT_OUTPUT, true)
+    this.expectSuccess = true
+    install(ContentNegotiation) {
+        jackson {
+            configure(
+                SerializationFeature.INDENT_OUTPUT, true
+            )
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                 .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS, true)
+            setDefaultPrettyPrinter(
+                DefaultPrettyPrinter().apply {
+                    indentArraysWith(DefaultPrettyPrinter.FixedSpaceIndenter.instance)
+                    indentObjectsWith(DefaultIndenter("  ", "\n"))
+                }
+            )
+            registerModule(JavaTimeModule())
         }
     }
 }
